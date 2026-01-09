@@ -1,251 +1,1568 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ShadowNet - Serverless P2P</title>
-<style>
-:root {
-    --background: #0a0a0f;
-    --surface: #11111f;
-    --surface-alt: #1a1a2e;
-    --primary: #00ff9d;
-    --primary-dark: #00cc7a;
-    --text: #f0f0f0;
-    --text-muted: #8888aa;
-    --border: #222244;
-    --danger: #ff4757;
-    --success: #2ed573;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Levi's Drinks - Order Management System</title>
+    <style>
+        :root {
+            --primary: #00ff9d;
+            --primary-dark: #00cc7a;
+            --background: #0a0a0f;
+            --surface: #11111f;
+            --surface-alt: #1a1a2e;
+            --text: #f0f0f0;
+            --text-muted: #8888aa;
+            --border: #222244;
+            --success: #2ed573;
+            --warning: #ffa502;
+            --danger: #ff4757;
+            --pending: #ffa502;
+            --delivered: #2ed573;
+            --cancelled: #ff4757;
+        }
 
-/* Basic resets */
-* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', sans-serif; }
-body { background: var(--background); color: var(--text); height:100vh; overflow:hidden; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
 
-/* Layout */
-.app-container { display:flex; height:100vh; max-width:1400px; margin:0 auto; border-left:1px solid var(--border); border-right:1px solid var(--border); }
-.sidebar { width:300px; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
-.chat-area { flex:1; display:flex; flex-direction:column; background:var(--background); }
+        body {
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+        }
 
-/* Sidebar header */
-.sidebar-header { padding:1.5rem; border-bottom:1px solid var(--border); }
-.logo { display:flex; align-items:center; gap:0.75rem; font-size:1.5rem; font-weight:800; color:var(--primary); }
-.user-profile { margin-top:1.5rem; padding:1rem; background:var(--surface-alt); border-radius:12px; display:flex; align-items:center; gap:1rem; }
-.avatar { width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,var(--primary),#0095ff); display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:1.25rem; }
-.user-info h3 { font-size:1rem; margin-bottom:0.25rem; }
-.user-id { font-size:0.75rem; color:var(--text-muted); font-family:monospace; background:rgba(0,0,0,0.3); padding:0.25rem 0.5rem; border-radius:4px; cursor:pointer; }
+        .dashboard {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            height: 100vh;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
 
-/* Contacts */
-.contacts { flex:1; overflow-y:auto; padding:1rem; }
-.contacts-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
-.add-contact-btn { background: var(--primary); color: var(--background); border:none; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1.25rem; display:flex; align-items:center; justify-content:center; }
-.contact-item { padding:1rem; margin-bottom:0.5rem; background:var(--surface-alt); border-radius:12px; display:flex; align-items:center; gap:1rem; cursor:pointer; transition: all 0.2s; border:2px solid transparent; }
-.contact-item:hover { background:#1e1e3a; transform:translateX(4px); }
-.contact-item.active { border-color:var(--primary); background: rgba(0,255,157,0.1); }
-.contact-avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#ff6b6b,#ffa502); display:flex; align-items:center; justify-content:center; font-weight:bold; }
-.contact-info h4 { font-size:0.9rem; margin-bottom:0.25rem; }
-.contact-status { font-size:0.75rem; display:flex; align-items:center; gap:0.5rem; }
-.status-indicator { width:8px; height:8px; border-radius:50%; background:var(--text-muted); }
-.status-indicator.online { background:var(--success); box-shadow:0 0 8px var(--success); }
+        /* Sidebar */
+        .sidebar {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-/* Chat area */
-.chat-header { padding:1rem 1.5rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:var(--surface); }
-.chat-partner-info { display:flex; align-items:center; gap:1rem; }
-.chat-actions { display:flex; gap:0.5rem; }
-.action-btn { background:transparent; border:1px solid var(--border); color:var(--text); width:36px; height:36px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
-.action-btn:hover { background:var(--surface-alt); border-color:var(--primary); }
-.messages-container { flex:1; padding:1.5rem; overflow-y:auto; display:flex; flex-direction:column; gap:1rem; background:linear-gradient(180deg, var(--background) 0%, #0c0c18 100%); }
-.message { max-width:70%; padding:1rem 1.25rem; border-radius:18px; position:relative; animation: fadeIn 0.3s ease; }
-@keyframes fadeIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
-.message.sent { align-self:flex-end; background:linear-gradient(135deg,var(--primary),#00cc7a); color:var(--background); border-bottom-right-radius:4px; }
-.message.received { align-self:flex-start; background:var(--surface-alt); border-bottom-left-radius:4px; }
-.message-content { word-wrap:break-word; line-height:1.5; }
-.message-time { font-size:0.75rem; opacity:0.7; margin-top:0.5rem; text-align:right; }
-.message.received .message-time { color:var(--text-muted); }
+        .logo {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
 
-/* Input */
-.message-input-container { padding:1rem 1.5rem; border-top:1px solid var(--border); background:var(--surface); }
-.input-wrapper { display:flex; gap:0.75rem; align-items:flex-end; }
-.message-input { flex:1; background:var(--surface-alt); border:2px solid var(--border); border-radius:12px; padding:1rem 1.25rem; color:var(--text); font-size:1rem; min-height:56px; max-height:200px; resize:none; outline:none; transition:border-color 0.2s; }
-.message-input:focus { border-color:var(--primary); }
-.send-btn { background:var(--primary); color:var(--background); border:none; width:56px; height:56px; border-radius:12px; cursor:pointer; font-size:1.25rem; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
-.send-btn:hover { background:var(--primary-dark); transform:translateY(-2px); }
-.send-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z'/%3E%3C/svg%3E") no-repeat center;
+        }
 
-/* Connection Panel */
-.connection-panel { position:fixed; top:1rem; right:1rem; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1rem; width:300px; z-index:1000; display:none; }
-.connection-panel.active { display:block; animation:slideIn 0.3s ease; }
-@keyframes slideIn { from {opacity:0; transform:translateY(-20px);} to {opacity:1; transform:translateY(0);} }
-.panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
-.close-panel { background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.25rem; }
-.peer-id-input, .offer-input, .answer-input { width:100%; padding:0.75rem; background:var(--surface-alt); border:1px solid var(--border); border-radius:8px; color:var(--text); margin-bottom:0.5rem; font-family:monospace; }
-.connect-btn { width:100%; padding:0.75rem; background:var(--primary); color:var(--background); border:none; border-radius:8px; cursor:pointer; font-weight:600; margin-bottom:0.5rem; }
+        .nav {
+            padding: 1rem;
+            flex: 1;
+        }
 
-/* Mobile */
-@media (max-width:768px){ .app-container{flex-direction:column;} .sidebar{width:100%; height:30vh; border-right:none; border-bottom:1px solid var(--border);} .contact-item{padding:0.75rem;} .message{max-width:85%;} }
-</style>
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-muted);
+        }
+
+        .nav-item:hover {
+            background: var(--surface-alt);
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: rgba(0, 255, 157, 0.1);
+            color: var(--primary);
+            border-left: 3px solid var(--primary);
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .business-info {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border);
+            background: var(--surface-alt);
+        }
+
+        .business-info h4 {
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        .phone-number {
+            font-family: monospace;
+            background: rgba(0, 255, 157, 0.1);
+            padding: 0.5rem;
+            border-radius: 6px;
+            margin: 0.5rem 0;
+            display: block;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            padding: 1.5rem;
+            background: var(--surface-alt);
+        }
+
+        .stat-card {
+            background: var(--surface);
+            padding: 1.25rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        /* Orders Section */
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .order-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            transition: all 0.3s;
+        }
+
+        .order-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(0, 255, 157, 0.1);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .order-id {
+            font-family: monospace;
+            color: var(--primary);
+            font-size: 0.875rem;
+            background: rgba(0, 255, 157, 0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .order-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-pending {
+            background: rgba(255, 165, 2, 0.2);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .status-preparing {
+            background: rgba(0, 157, 255, 0.2);
+            color: #009dff;
+            border: 1px solid #009dff;
+        }
+
+        .status-delivered {
+            background: rgba(46, 213, 115, 0.2);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .status-cancelled {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .customer-info {
+            margin-bottom: 1rem;
+        }
+
+        .customer-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .customer-phone {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .order-items {
+            margin: 1rem 0;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-quantity {
+            color: var(--primary);
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .order-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 2px solid var(--border);
+            font-weight: 600;
+        }
+
+        .total-amount {
+            color: var(--primary);
+            font-size: 1.25rem;
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--background);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        /* Customers Section */
+        .customers-table {
+            width: 100%;
+            background: var(--surface);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .table-header {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
+            padding: 1rem;
+            background: var(--surface-alt);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+        }
+
+        .table-row:last-child {
+            border-bottom: none;
+        }
+
+        .table-row:hover {
+            background: var(--surface-alt);
+        }
+
+        /* Messages Section */
+        .messages-container {
+            display: flex;
+            height: 600px;
+            background: var(--surface);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .conversations-sidebar {
+            width: 300px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .conversations-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface-alt);
+        }
+
+        .conversation-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .conversation-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .conversation-item:hover {
+            background: var(--surface-alt);
+        }
+
+        .conversation-item.active {
+            background: rgba(0, 255, 157, 0.1);
+            border-left: 3px solid var(--primary);
+        }
+
+        .conversation-customer {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .conversation-preview {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface-alt);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+        }
+
+        .message.sent {
+            align-self: flex-end;
+            background: rgba(0, 255, 157, 0.2);
+            border: 1px solid var(--primary);
+        }
+
+        .message.received {
+            align-self: flex-start;
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+        }
+
+        .chat-input-container {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+            background: var(--surface-alt);
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            resize: none;
+            min-height: 50px;
+            max-height: 150px;
+        }
+
+        /* Products Section */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .product-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            position: relative;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 150px;
+            background: var(--surface-alt);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+
+        .product-name {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        .product-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .product-stock {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .orders-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .messages-container {
+                flex-direction: column;
+                height: 500px;
+            }
+            
+            .conversations-sidebar {
+                width: 100%;
+                height: 200px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            
+            .table-header, .table-row {
+                grid-template-columns: repeat(2, 1fr);
+                font-size: 0.875rem;
+            }
+        }
+    </style>
 </head>
 <body>
-<div class="app-container">
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">ShadowNet</div>
-            <div class="user-profile">
-                <div class="avatar" id="userAvatar">U</div>
-                <div class="user-info">
-                    <h3 id="username">User</h3>
-                    <div class="user-id" id="userId">Generating ID...</div>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <div class="logo-icon"></div>
+                Levi's Drinks
+            </div>
+            
+            <div class="nav">
+                <div class="nav-item active" data-section="dashboard">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Dashboard
+                </div>
+                <div class="nav-item" data-section="orders">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 7h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v3H4c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2z"></path>
+                        <path d="M10 4h4v3h-4z"></path>
+                    </svg>
+                    Orders
+                </div>
+                <div class="nav-item" data-section="customers">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Customers
+                </div>
+                <div class="nav-item" data-section="messages">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Messages
+                </div>
+                <div class="nav-item" data-section="products">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    Products
+                </div>
+                <div class="nav-item" data-section="reports">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                    Reports
                 </div>
             </div>
-        </div>
-        <div class="contacts">
-            <div class="contacts-header">
-                <h3>Contacts</h3>
-                <button class="add-contact-btn" id="addContactBtn">+</button>
+            
+            <div class="business-info">
+                <h4>Business Contact</h4>
+                <span class="phone-number">(316) 866-1086</span>
+                <p style="font-size: 0.875rem; color: var(--text-muted);">
+                    Cash App & Cash accepted<br>
+                    Local delivery only
+                </p>
             </div>
-            <div id="contactsList">
-                <div class="contact-item" data-id="system">
-                    <div class="contact-avatar">S</div>
-                    <div class="contact-info">
-                        <h4>System</h4>
-                        <div class="contact-status"><div class="status-indicator online"></div>Always online</div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1 id="pageTitle">Dashboard</h1>
+                <div class="quick-actions">
+                    <button class="btn btn-primary" id="newOrderBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        New Order
+                    </button>
+                    <button class="btn btn-outline" id="refreshBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 4v6h-6"></path>
+                            <path d="M1 20v-6h6"></path>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalOrders">0</div>
+                    <div class="stat-label">Total Orders</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="pendingOrders">0</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">$<span id="todayRevenue">0</span></div>
+                    <div class="stat-label">Today's Revenue</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="activeCustomers">0</div>
+                    <div class="stat-label">Active Customers</div>
+                </div>
+            </div>
+
+            <div class="content-area" id="contentArea">
+                <!-- Content will be dynamically loaded here -->
+                <div id="dashboardContent">
+                    <h2>Recent Orders</h2>
+                    <div class="orders-grid" id="recentOrders">
+                        <!-- Recent orders will be loaded here -->
+                    </div>
+                    
+                    <h2 style="margin-top: 2rem;">Quick Actions</h2>
+                    <div class="quick-actions">
+                        <button class="btn btn-primary" id="quickNewOrder">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Create Order
+                        </button>
+                        <button class="btn btn-outline" id="quickMessage">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            Send Message
+                        </button>
+                        <button class="btn btn-outline" id="quickReport">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            Daily Report
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="chat-area">
-        <div class="chat-header">
-            <div class="chat-partner-info">
-                <div class="contact-avatar" id="chatAvatar">S</div>
-                <div>
-                    <h3 id="chatPartnerName">System</h3>
-                    <div class="contact-status">
-                        <div class="status-indicator online" id="chatStatus"></div>
-                        <span id="chatStatusText">Online</span>
+    <!-- New Order Modal -->
+    <div class="modal" id="newOrderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>New Order</h2>
+                <button class="btn btn-outline" id="closeModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Customer Name</label>
+                    <input type="text" class="form-input" id="customerName" placeholder="Enter customer name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-input" id="customerPhone" placeholder="(316) 866-1086">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Delivery Location</label>
+                    <input type="text" class="form-input" id="deliveryLocation" placeholder="Meetup location">
+                </div>
+                
+                <h3 style="margin: 1.5rem 0 1rem;">Order Items</h3>
+                <div id="orderItems">
+                    <div class="order-item" style="border-bottom: none; padding: 0.5rem; background: var(--surface-alt); border-radius: 8px; margin-bottom: 0.5rem;">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <select class="form-input" style="flex: 2;">
+                                <option value="redbull">Red Bull - $4.00</option>
+                                <option value="monster">Monster Energy - $3.00</option>
+                                <option value="drpepper">Dr Pepper - $2.00</option>
+                                <option value="sprite">Sprite - $2.00</option>
+                                <option value="cola">Cola - $2.00</option>
+                            </select>
+                            <input type="number" class="form-input" value="1" min="1" style="width: 80px;">
+                            <button class="btn btn-outline btn-sm" style="background: var(--danger); color: white; border: none;">×</button>
+                        </div>
                     </div>
                 </div>
+                
+                <button class="btn btn-outline" id="addItemBtn" style="width: 100%; margin-bottom: 1rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Add Item
+                </button>
+                
+                <div class="order-total">
+                    <span>Total:</span>
+                    <span class="total-amount">$0.00</span>
+                </div>
             </div>
-            <div class="chat-actions">
-                <button class="action-btn" id="clearChatBtn" title="Clear Chat">🗑️</button>
-            </div>
-        </div>
-
-        <div class="messages-container" id="messagesContainer">
-            <div class="message received">
-                <div class="message-content">Welcome to ShadowNet Serverless P2P chat.</div>
-                <div class="message-time">Just now</div>
-            </div>
-        </div>
-
-        <div class="message-input-container">
-            <div class="input-wrapper">
-                <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
-                <button class="send-btn" id="sendBtn" disabled>➤</button>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancelOrderBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveOrderBtn">Create Order</button>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Connection Panel for Manual P2P -->
-<div class="connection-panel" id="connectionPanel">
-    <div class="panel-header">
-        <h3>Connect Peer</h3>
-        <button class="close-panel" id="closePanelBtn">×</button>
-    </div>
-    <button class="connect-btn" id="createOfferBtn">Create Offer</button>
-    <textarea class="offer-input" id="offerOutput" placeholder="Copy this to your peer..." rows="4" readonly></textarea>
-    <textarea class="answer-input" id="answerInput" placeholder="Paste peer answer here..." rows="4"></textarea>
-    <button class="connect-btn" id="setAnswerBtn">Set Answer</button>
-</div>
+    <script>
+        class DrinkBusinessManager {
+            constructor() {
+                this.orders = [];
+                this.customers = [];
+                this.products = [
+                    { id: 1, name: "Red Bull", price: 4.00, category: "Energy", stock: 50 },
+                    { id: 2, name: "Monster Energy", price: 3.00, category: "Energy", stock: 40 },
+                    { id: 3, name: "Dr Pepper", price: 2.00, category: "Soda", stock: 60 },
+                    { id: 4, name: "Sprite", price: 2.00, category: "Soda", stock: 55 },
+                    { id: 5, name: "Cola", price: 2.00, category: "Soda", stock: 65 }
+                ];
+                this.messages = [];
+                this.currentSection = 'dashboard';
+                
+                this.init();
+            }
 
-<script>
-class ShadowNetServerless {
-    constructor(){
-        this.peer = new RTCPeerConnection();
-        this.dataChannel = null;
-        this.messagesContainer = document.getElementById('messagesContainer');
-        this.currentPeerName = "Peer";
-        this.userId = 'user_' + Math.random().toString(36).substr(2, 9);
-        this.username = `User_${Math.floor(Math.random()*1000)}`;
-        this.setupUI();
-        this.setupEventListeners();
-        this.peer.ondatachannel = e => this.setupDataChannel(e.channel);
-        this.peer.onicecandidate = e => {
-            if(e.candidate) console.log("ICE Candidate:", JSON.stringify(e.candidate));
+            init() {
+                this.loadFromStorage();
+                this.setupEventListeners();
+                this.updateStats();
+                this.loadDashboard();
+            }
+
+            loadFromStorage() {
+                try {
+                    const saved = JSON.parse(localStorage.getItem('levis_drinks_data'));
+                    if (saved) {
+                        this.orders = saved.orders || [];
+                        this.customers = saved.customers || [];
+                        this.messages = saved.messages || [];
+                    }
+                } catch (e) {
+                    console.log('Starting fresh');
+                }
+            }
+
+            saveToStorage() {
+                const data = {
+                    orders: this.orders,
+                    customers: this.customers,
+                    messages: this.messages,
+                    lastUpdated: new Date().toISOString()
+                };
+                localStorage.setItem('levis_drinks_data', JSON.stringify(data));
+            }
+
+            setupEventListeners() {
+                // Navigation
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        const section = e.currentTarget.dataset.section;
+                        this.switchSection(section);
+                    });
+                });
+
+                // Buttons
+                document.getElementById('newOrderBtn').addEventListener('click', () => this.showNewOrderModal());
+                document.getElementById('quickNewOrder').addEventListener('click', () => this.showNewOrderModal());
+                document.getElementById('refreshBtn').addEventListener('click', () => this.refreshData());
+                document.getElementById('closeModal').addEventListener('click', () => this.hideModal());
+                document.getElementById('cancelOrderBtn').addEventListener('click', () => this.hideModal());
+                document.getElementById('saveOrderBtn').addEventListener('click', () => this.saveNewOrder());
+                document.getElementById('addItemBtn').addEventListener('click', () => this.addOrderItem());
+            }
+
+            switchSection(section) {
+                this.currentSection = section;
+                
+                // Update active nav item
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.section === section) {
+                        item.classList.add('active');
+                    }
+                });
+
+                // Update page title
+                document.getElementById('pageTitle').textContent = 
+                    section.charAt(0).toUpperCase() + section.slice(1);
+
+                // Load section content
+                switch(section) {
+                    case 'dashboard':
+                        this.loadDashboard();
+                        break;
+                    case 'orders':
+                        this.loadOrders();
+                        break;
+                    case 'customers':
+                        this.loadCustomers();
+                        break;
+                    case 'messages':
+                        this.loadMessages();
+                        break;
+                    case 'products':
+                        this.loadProducts();
+                        break;
+                    case 'reports':
+                        this.loadReports();
+                        break;
+                }
+            }
+
+            loadDashboard() {
+                const content = `
+                    <h2>Recent Orders</h2>
+                    <div class="orders-grid" id="recentOrdersGrid">
+                        ${this.getRecentOrdersHTML()}
+                    </div>
+                    
+                    <h2 style="margin-top: 2rem;">Quick Actions</h2>
+                    <div class="quick-actions">
+                        <button class="btn btn-primary" id="quickNewOrder2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Create Order
+                        </button>
+                        <button class="btn btn-outline" id="quickMessage2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            Send Message
+                        </button>
+                        <button class="btn btn-outline" id="quickReport2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            Daily Report
+                        </button>
+                    </div>
+                `;
+                
+                document.getElementById('contentArea').innerHTML = content;
+                
+                // Reattach event listeners
+                document.getElementById('quickNewOrder2')?.addEventListener('click', () => this.showNewOrderModal());
+                document.getElementById('quickMessage2')?.addEventListener('click', () => this.switchSection('messages'));
+                document.getElementById('quickReport2')?.addEventListener('click', () => this.generateDailyReport());
+                
+                // Add click handlers to order cards
+                setTimeout(() => {
+                    document.querySelectorAll('.order-card').forEach(card => {
+                        card.addEventListener('click', (e) => {
+                            if (!e.target.closest('.order-actions')) {
+                                const orderId = card.dataset.orderId;
+                                this.viewOrderDetails(orderId);
+                            }
+                        });
+                    });
+                }, 100);
+            }
+
+            getRecentOrdersHTML() {
+                const recentOrders = this.orders.slice(-5).reverse();
+                if (recentOrders.length === 0) {
+                    return '<p style="color: var(--text-muted); padding: 2rem; text-align: center;">No orders yet</p>';
+                }
+
+                return recentOrders.map(order => `
+                    <div class="order-card" data-order-id="${order.id}">
+                        <div class="order-header">
+                            <span class="order-id">#${order.id.toString().padStart(4, '0')}</span>
+                            <span class="order-status status-${order.status}">${order.status}</span>
+                        </div>
+                        <div class="customer-info">
+                            <div class="customer-name">${order.customerName}</div>
+                            <div class="customer-phone">${order.customerPhone}</div>
+                        </div>
+                        <div class="order-items">
+                            ${order.items.map(item => `
+                                <div class="order-item">
+                                    <span>
+                                        <span class="item-quantity">${item.quantity}x</span>
+                                        ${item.name}
+                                    </span>
+                                    <span>$${(item.price * item.quantity).toFixed(2)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="order-total">
+                            <span>Total:</span>
+                            <span class="total-amount">$${order.total.toFixed(2)}</span>
+                        </div>
+                        <div class="order-actions">
+                            <button class="btn btn-outline btn-sm" onclick="window.businessManager.updateOrderStatus('${order.id}', 'preparing')">Preparing</button>
+                            <button class="btn btn-primary btn-sm" onclick="window.businessManager.updateOrderStatus('${order.id}', 'delivered')">Delivered</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            updateStats() {
+                const today = new Date().toDateString();
+                const todayOrders = this.orders.filter(order => 
+                    new Date(order.timestamp).toDateString() === today
+                );
+                
+                const totalRevenue = todayOrders.reduce((sum, order) => sum + order.total, 0);
+                const pendingCount = this.orders.filter(order => order.status === 'pending').length;
+                const uniqueCustomers = [...new Set(this.orders.map(order => order.customerPhone))].length;
+
+                document.getElementById('totalOrders').textContent = this.orders.length;
+                document.getElementById('pendingOrders').textContent = pendingCount;
+                document.getElementById('todayRevenue').textContent = totalRevenue.toFixed(2);
+                document.getElementById('activeCustomers').textContent = uniqueCustomers;
+            }
+
+            showNewOrderModal() {
+                document.getElementById('newOrderModal').classList.add('active');
+            }
+
+            hideModal() {
+                document.getElementById('newOrderModal').classList.remove('active');
+            }
+
+            addOrderItem() {
+                const itemsContainer = document.getElementById('orderItems');
+                const newItem = document.createElement('div');
+                newItem.className = 'order-item';
+                newItem.style.cssText = 'border-bottom: none; padding: 0.5rem; background: var(--surface-alt); border-radius: 8px; margin-bottom: 0.5rem;';
+                newItem.innerHTML = `
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <select class="form-input" style="flex: 2;">
+                            <option value="redbull">Red Bull - $4.00</option>
+                            <option value="monster">Monster Energy - $3.00</option>
+                            <option value="drpepper">Dr Pepper - $2.00</option>
+                            <option value="sprite">Sprite - $2.00</option>
+                            <option value="cola">Cola - $2.00</option>
+                        </select>
+                        <input type="number" class="form-input" value="1" min="1" style="width: 80px;">
+                        <button class="btn btn-outline btn-sm remove-item" style="background: var(--danger); color: white; border: none;">×</button>
+                    </div>
+                `;
+                itemsContainer.appendChild(newItem);
+                
+                // Add remove functionality
+                newItem.querySelector('.remove-item').addEventListener('click', () => {
+                    itemsContainer.removeChild(newItem);
+                    this.calculateOrderTotal();
+                });
+                
+                // Add change listeners
+                newItem.querySelector('select').addEventListener('change', () => this.calculateOrderTotal());
+                newItem.querySelector('input[type="number"]').addEventListener('input', () => this.calculateOrderTotal());
+                
+                this.calculateOrderTotal();
+            }
+
+            calculateOrderTotal() {
+                let total = 0;
+                document.querySelectorAll('#orderItems .order-item').forEach(item => {
+                    const select = item.querySelector('select');
+                    const quantity = parseInt(item.querySelector('input[type="number"]').value) || 1;
+                    const price = parseFloat(select.options[select.selectedIndex].text.match(/\$([\d.]+)/)[1]);
+                    total += price * quantity;
+                });
+                
+                document.querySelector('.total-amount').textContent = `$${total.toFixed(2)}`;
+            }
+
+            saveNewOrder() {
+                const customerName = document.getElementById('customerName').value.trim();
+                const customerPhone = document.getElementById('customerPhone').value.trim();
+                const deliveryLocation = document.getElementById('deliveryLocation').value.trim();
+
+                if (!customerName || !customerPhone) {
+                    alert('Please fill in customer name and phone number');
+                    return;
+                }
+
+                // Collect order items
+                const items = [];
+                document.querySelectorAll('#orderItems .order-item').forEach(item => {
+                    const select = item.querySelector('select');
+                    const quantity = parseInt(item.querySelector('input[type="number"]').value) || 1;
+                    const productText = select.options[select.selectedIndex].text;
+                    const match = productText.match(/(.+) - \$([\d.]+)/);
+                    
+                    if (match) {
+                        items.push({
+                            name: match[1],
+                            price: parseFloat(match[2]),
+                            quantity: quantity
+                        });
+                    }
+                });
+
+                if (items.length === 0) {
+                    alert('Please add at least one item to the order');
+                    return;
+                }
+
+                const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+                // Create new order
+                const newOrder = {
+                    id: Date.now(),
+                    customerName,
+                    customerPhone,
+                    deliveryLocation,
+                    items,
+                    total,
+                    status: 'pending',
+                    timestamp: new Date().toISOString(),
+                    paymentMethod: 'cash',
+                    paymentStatus: 'pending'
+                };
+
+                // Add customer if new
+                if (!this.customers.find(c => c.phone === customerPhone)) {
+                    this.customers.push({
+                        id: Date.now(),
+                        name: customerName,
+                        phone: customerPhone,
+                        firstOrder: new Date().toISOString(),
+                        lastOrder: new Date().toISOString(),
+                        totalSpent: total,
+                        orderCount: 1
+                    });
+                } else {
+                    // Update existing customer
+                    const customer = this.customers.find(c => c.phone === customerPhone);
+                    customer.lastOrder = new Date().toISOString();
+                    customer.totalSpent += total;
+                    customer.orderCount++;
+                }
+
+                this.orders.push(newOrder);
+                this.saveToStorage();
+                this.updateStats();
+                this.hideModal();
+                this.loadDashboard(); // Refresh dashboard view
+                
+                // Clear form
+                document.getElementById('customerName').value = '';
+                document.getElementById('customerPhone').value = '';
+                document.getElementById('deliveryLocation').value = '';
+                document.getElementById('orderItems').innerHTML = '';
+                this.addOrderItem(); // Add one empty item back
+                
+                alert(`Order #${newOrder.id.toString().padStart(4, '0')} created successfully!`);
+            }
+
+            updateOrderStatus(orderId, status) {
+                const order = this.orders.find(o => o.id == orderId);
+                if (order) {
+                    order.status = status;
+                    if (status === 'delivered') {
+                        order.paymentStatus = 'paid';
+                        order.deliveredAt = new Date().toISOString();
+                    }
+                    this.saveToStorage();
+                    this.updateStats();
+                    this.loadDashboard();
+                }
+            }
+
+            viewOrderDetails(orderId) {
+                const order = this.orders.find(o => o.id == orderId);
+                if (order) {
+                    const details = `
+                        Order #${order.id.toString().padStart(4, '0')}
+                        Customer: ${order.customerName}
+                        Phone: ${order.customerPhone}
+                        Location: ${order.deliveryLocation}
+                        Status: ${order.status}
+                        Total: $${order.total.toFixed(2)}
+                    `;
+                    alert(details);
+                }
+            }
+
+            loadOrders() {
+                let html = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h2>All Orders</h2>
+                        <button class="btn btn-primary" id="filterOrdersBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                            </svg>
+                            Filter
+                        </button>
+                    </div>
+                `;
+
+                if (this.orders.length === 0) {
+                    html += '<p style="color: var(--text-muted); padding: 2rem; text-align: center;">No orders yet</p>';
+                } else {
+                    html += '<div class="orders-grid">';
+                    this.orders.reverse().forEach(order => {
+                        html += this.getOrderCardHTML(order);
+                    });
+                    html += '</div>';
+                }
+
+                document.getElementById('contentArea').innerHTML = html;
+            }
+
+            loadCustomers() {
+                let html = '<h2>Customers</h2>';
+
+                if (this.customers.length === 0) {
+                    html += '<p style="color: var(--text-muted); padding: 2rem; text-align: center;">No customers yet</p>';
+                } else {
+                    html += `
+                        <div class="customers-table">
+                            <div class="table-header">
+                                <div>Name</div>
+                                <div>Phone</div>
+                                <div>Orders</div>
+                                <div>Total Spent</div>
+                                <div>Last Order</div>
+                            </div>
+                    `;
+
+                    this.customers.forEach(customer => {
+                        html += `
+                            <div class="table-row">
+                                <div>${customer.name}</div>
+                                <div>${customer.phone}</div>
+                                <div>${customer.orderCount || 1}</div>
+                                <div>$${(customer.totalSpent || 0).toFixed(2)}</div>
+                                <div>${new Date(customer.lastOrder).toLocaleDateString()}</div>
+                            </div>
+                        `;
+                    });
+
+                    html += '</div>';
+                }
+
+                document.getElementById('contentArea').innerHTML = html;
+            }
+
+            loadMessages() {
+                const html = `
+                    <h2>Customer Messages</h2>
+                    <div class="messages-container">
+                        <div class="conversations-sidebar">
+                            <div class="conversations-header">
+                                <h3>Conversations</h3>
+                            </div>
+                            <div class="conversation-list">
+                                ${this.customers.map(customer => `
+                                    <div class="conversation-item" data-customer-id="${customer.id}">
+                                        <div class="conversation-customer">${customer.name}</div>
+                                        <div class="conversation-preview">Click to start conversation</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="chat-area">
+                            <div class="chat-header">
+                                <h3>Select a customer to message</h3>
+                            </div>
+                            <div class="chat-messages" id="chatMessages">
+                                <!-- Messages will appear here -->
+                            </div>
+                            <div class="chat-input-container">
+                                <div class="chat-input-wrapper">
+                                    <textarea class="chat-input" placeholder="Type a message..." disabled></textarea>
+                                    <button class="btn btn-primary" disabled>Send</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('contentArea').innerHTML = html;
+
+                // Add conversation click handlers
+                document.querySelectorAll('.conversation-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
+                        item.classList.add('active');
+                        // In a real implementation, you would load the conversation here
+                    });
+                });
+            }
+
+            loadProducts() {
+                const html = `
+                    <h2>Products</h2>
+                    <div class="products-grid">
+                        ${this.products.map(product => `
+                            <div class="product-card">
+                                <div class="product-image">${product.name}</div>
+                                <div class="product-name">${product.name}</div>
+                                <div class="product-price">$${product.price.toFixed(2)}</div>
+                                <div class="product-stock">
+                                    <span>Stock: ${product.stock}</span>
+                                    <button class="btn btn-outline btn-sm">Restock</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                document.getElementById('contentArea').innerHTML = html;
+            }
+
+            loadReports() {
+                const today = new Date().toDateString();
+                const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+                
+                const weekOrders = this.orders.filter(order => new Date(order.timestamp) >= weekAgo);
+                const weekRevenue = weekOrders.reduce((sum, order) => sum + order.total, 0);
+                const avgOrderValue = weekOrders.length > 0 ? weekRevenue / weekOrders.length : 0;
+                
+                const html = `
+                    <h2>Business Reports</h2>
+                    
+                    <div class="stats" style="margin-top: 1rem;">
+                        <div class="stat-card">
+                            <div class="stat-value">$${weekRevenue.toFixed(2)}</div>
+                            <div class="stat-label">7-Day Revenue</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${weekOrders.length}</div>
+                            <div class="stat-label">Orders This Week</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">$${avgOrderValue.toFixed(2)}</div>
+                            <div class="stat-label">Avg Order Value</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${this.customers.length}</div>
+                            <div class="stat-label">Total Customers</div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top: 2rem;">Top Products</h3>
+                    <div style="background: var(--surface); border-radius: 12px; padding: 1.5rem; margin-top: 1rem;">
+                        ${this.getTopProductsHTML()}
+                    </div>
+                `;
+
+                document.getElementById('contentArea').innerHTML = html;
+            }
+
+            getTopProductsHTML() {
+                // Count product sales from orders
+                const productSales = {};
+                this.orders.forEach(order => {
+                    order.items.forEach(item => {
+                        if (!productSales[item.name]) {
+                            productSales[item.name] = 0;
+                        }
+                        productSales[item.name] += item.quantity;
+                    });
+                });
+
+                const sortedProducts = Object.entries(productSales)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5);
+
+                if (sortedProducts.length === 0) {
+                    return '<p style="color: var(--text-muted); text-align: center;">No sales data yet</p>';
+                }
+
+                return sortedProducts.map(([name, count]) => `
+                    <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
+                        <span>${name}</span>
+                        <span style="color: var(--primary); font-weight: 600;">${count} sold</span>
+                    </div>
+                `).join('');
+            }
+
+            generateDailyReport() {
+                const today = new Date().toDateString();
+                const todayOrders = this.orders.filter(order => 
+                    new Date(order.timestamp).toDateString() === today
+                );
+                
+                const report = `
+                    DAILY REPORT - ${today}
+                    
+                    Total Orders: ${todayOrders.length}
+                    Total Revenue: $${todayOrders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}
+                    Average Order Value: $${(todayOrders.length > 0 ? todayOrders.reduce((sum, order) => sum + order.total, 0) / todayOrders.length : 0).toFixed(2)}
+                    
+                    New Customers: ${[...new Set(todayOrders.map(order => order.customerPhone))].length}
+                    
+                    Orders by Status:
+                    - Pending: ${todayOrders.filter(o => o.status === 'pending').length}
+                    - Preparing: ${todayOrders.filter(o => o.status === 'preparing').length}
+                    - Delivered: ${todayOrders.filter(o => o.status === 'delivered').length}
+                `;
+                
+                alert(report);
+            }
+
+            refreshData() {
+                this.updateStats();
+                this.loadDashboard();
+                alert('Data refreshed!');
+            }
+
+            getOrderCardHTML(order) {
+                return `
+                    <div class="order-card" data-order-id="${order.id}">
+                        <div class="order-header">
+                            <span class="order-id">#${order.id.toString().padStart(4, '0')}</span>
+                            <span class="order-status status-${order.status}">${order.status}</span>
+                        </div>
+                        <div class="customer-info">
+                            <div class="customer-name">${order.customerName}</div>
+                            <div class="customer-phone">${order.customerPhone}</div>
+                            <div style="font-size: 0.875rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                ${new Date(order.timestamp).toLocaleString()}
+                            </div>
+                        </div>
+                        <div class="order-items">
+                            ${order.items.map(item => `
+                                <div class="order-item">
+                                    <span>
+                                        <span class="item-quantity">${item.quantity}x</span>
+                                        ${item.name}
+                                    </span>
+                                    <span>$${(item.price * item.quantity).toFixed(2)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="order-total">
+                            <span>Total:</span>
+                            <span class="total-amount">$${order.total.toFixed(2)}</span>
+                        </div>
+                        <div class="order-actions">
+                            <button class="btn btn-outline btn-sm" onclick="window.businessManager.updateOrderStatus('${order.id}', 'preparing')">Preparing</button>
+                            <button class="btn btn-primary btn-sm" onclick="window.businessManager.updateOrderStatus('${order.id}', 'delivered')">Delivered</button>
+                            <button class="btn btn-outline btn-sm" style="color: var(--danger);" onclick="window.businessManager.updateOrderStatus('${order.id}', 'cancelled')">Cancel</button>
+                        </div>
+                    </div>
+                `;
+            }
         }
-    }
 
-    setupUI(){
-        document.getElementById('username').textContent = this.username;
-        document.getElementById('userAvatar').textContent = this.username.charAt(0);
-        document.getElementById('userId').textContent = this.userId;
-    }
-
-    setupDataChannel(channel){
-        this.dataChannel = channel;
-        this.dataChannel.onopen = ()=>{this.addMessage("System","Connected!"); document.getElementById('sendBtn').disabled=false;}
-        this.dataChannel.onclose = ()=>{this.addMessage("System","Disconnected"); document.getElementById('sendBtn').disabled=true;}
-        this.dataChannel.onmessage = e=>{
-            const msg = JSON.parse(e.data);
-            this.addMessage(msg.sender, msg.content, false);
-        }
-    }
-
-    setupEventListeners(){
-        const msgInput = document.getElementById('messageInput');
-        const sendBtn = document.getElementById('sendBtn');
-        sendBtn.addEventListener('click', ()=>this.sendMessage());
-        msgInput.addEventListener('keydown', e=>{
-            if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); this.sendMessage(); }
+        // Initialize the business manager
+        document.addEventListener('DOMContentLoaded', () => {
+            window.businessManager = new DrinkBusinessManager();
+            
+            // Add demo data if empty
+            setTimeout(() => {
+                if (window.businessManager.orders.length === 0) {
+                    window.businessManager.orders.push({
+                        id: Date.now() - 1000,
+                        customerName: "Alex Johnson",
+                        customerPhone: "(316) 555-1234",
+                        deliveryLocation: "Downtown Park",
+                        items: [
+                            { name: "Red Bull", price: 4.00, quantity: 2 },
+                            { name: "Monster Energy", price: 3.00, quantity: 1 }
+                        ],
+                        total: 11.00,
+                        status: "delivered",
+                        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+                        paymentMethod: "cash",
+                        paymentStatus: "paid"
+                    });
+                    
+                    window.businessManager.orders.push({
+                        id: Date.now() - 500,
+                        customerName: "Taylor Smith",
+                        customerPhone: "(316) 555-5678",
+                        deliveryLocation: "University Campus",
+                        items: [
+                            { name: "Dr Pepper", price: 2.00, quantity: 3 },
+                            { name: "Sprite", price: 2.00, quantity: 2 }
+                        ],
+                        total: 10.00,
+                        status: "pending",
+                        timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+                        paymentMethod: "cash",
+                        paymentStatus: "pending"
+                    });
+                    
+                    window.businessManager.saveToStorage();
+                    window.businessManager.updateStats();
+                    window.businessManager.loadDashboard();
+                }
+            }, 500);
         });
-        msgInput.addEventListener('input', function(){ this.style.height='auto'; this.style.height=this.scrollHeight+'px'; });
-
-        // Connection panel
-        document.getElementById('addContactBtn').addEventListener('click', ()=>document.getElementById('connectionPanel').classList.add('active'));
-        document.getElementById('closePanelBtn').addEventListener('click', ()=>document.getElementById('connectionPanel').classList.remove('active'));
-
-        // Create offer
-        document.getElementById('createOfferBtn').addEventListener('click', async ()=>{
-            this.dataChannel = this.peer.createDataChannel('shadownet');
-            this.setupDataChannel(this.dataChannel);
-            const offer = await this.peer.createOffer();
-            await this.peer.setLocalDescription(offer);
-            document.getElementById('offerOutput').value = JSON.stringify(offer);
-        });
-
-        // Set answer
-        document.getElementById('setAnswerBtn').addEventListener('click', async ()=>{
-            const answer = JSON.parse(document.getElementById('answerInput').value);
-            await this.peer.setRemoteDescription(answer);
-            document.getElementById('connectionPanel').classList.remove('active');
-        });
-    }
-
-    sendMessage(){
-        const input = document.getElementById('messageInput');
-        const content = input.value.trim();
-        if(!content||!this.dataChannel||this.dataChannel.readyState!=='open') return;
-        const message = {sender:this.username, content};
-        this.dataChannel.send(JSON.stringify(message));
-        this.addMessage(this.username, content, true);
-        input.value=''; input.style.height='auto';
-    }
-
-    addMessage(sender, content, isSent=true){
-        const div = document.createElement('div');
-        div.className = `message ${isSent?'sent':'received'}`;
-        div.innerHTML = `<div class="message-content">${this.escapeHtml(content)}</div><div class="message-time">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>`;
-        this.messagesContainer.appendChild(div);
-        this.messagesContainer.scrollTop=this.messagesContainer.scrollHeight;
-    }
-
-    escapeHtml(text){ const div=document.createElement('div'); div.textContent=text; return div.innerHTML; }
-}
-
-document.addEventListener('DOMContentLoaded', ()=>window.messenger=new ShadowNetServerless());
-</script>
+    </script>
 </body>
 </html>
-
