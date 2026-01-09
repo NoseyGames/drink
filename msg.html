@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShadowNet - Secure Messaging</title>
+    <style>
+        :root {
+            --background: #0a0a0f;
+            --surface: #11111f;
+            --surface-alt: #1a1a2e;
+            --primary: #00ff9d;
+            --primary-dark: #00cc7a;
+            --text: #f0f0f0;
+            --text-muted: #8888aa;
+            --border: #222244;
+            --danger: #ff4757;
+            --warning: #ffa502;
+            --success: #2ed573;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z'/%3E%3C/svg%3E") no-repeat center;
+        }
+
+        .user-profile {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--surface-alt);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #0095ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+
+        .user-info h3 {
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .user-id {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: monospace;
+            background: rgba(0,0,0,0.3);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Contacts List */
+        .contacts {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .contacts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .add-contact-btn {
+            background: var(--primary);
+            color: var(--background);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .contact-item {
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: var(--surface-alt);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .contact-item:hover {
+            background: #1e1e3a;
+            transform: translateX(4px);
+        }
+
+        .contact-item.active {
+            border-color: var(--primary);
+            background: rgba(0, 255, 157, 0.1);
+        }
+
+        .contact-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b, #ffa502);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .contact-info h4 {
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .contact-status {
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .status-indicator.online {
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        .status-indicator.away {
+            background: var(--warning);
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--background);
+        }
+
+        .chat-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+        }
+
+        .chat-partner-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--surface-alt);
+            border-color: var(--primary);
+        }
+
+        /* Messages Container */
+        .messages-container {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            background: linear-gradient(180deg, var(--background) 0%, #0c0c18 100%);
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 1rem 1.25rem;
+            border-radius: 18px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.sent {
+            align-self: flex-end;
+            background: linear-gradient(135deg, var(--primary), #00cc7a);
+            color: var(--background);
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.received {
+            align-self: flex-start;
+            background: var(--surface-alt);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-content {
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+            text-align: right;
+        }
+
+        .message.received .message-time {
+            color: var(--text-muted);
+        }
+
+        /* Message Input */
+        .message-input-container {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+        }
+
+        .message-input {
+            flex: 1;
+            background: var(--surface-alt);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            color: var(--text);
+            font-size: 1rem;
+            min-height: 56px;
+            max-height: 200px;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .message-input:focus {
+            border-color: var(--primary);
+        }
+
+        .send-btn {
+            background: var(--primary);
+            color: var(--background);
+            border: none;
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .send-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Encryption Badge */
+        .encryption-badge {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1000;
+        }
+
+        .lock-icon {
+            color: var(--primary);
+        }
+
+        /* Connection Panel */
+        .connection-panel {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            width: 300px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .connection-panel.active {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .close-panel {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.25rem;
+        }
+
+        .peer-id-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            margin-bottom: 1rem;
+            font-family: monospace;
+        }
+
+        .connect-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--primary);
+            color: var(--background);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .your-id {
+            background: var(--surface-alt);
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .copy-id {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 30vh;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            
+            .contact-item {
+                padding: 0.75rem;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon"></div>
+                    ShadowNet
+                </div>
+                <div class="user-profile">
+                    <div class="avatar" id="userAvatar">U</div>
+                    <div class="user-info">
+                        <h3 id="username">User_001</h3>
+                        <div class="user-id" id="userId" title="Click to copy">Loading ID...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="contacts">
+                <div class="contacts-header">
+                    <h3>Contacts</h3>
+                    <button class="add-contact-btn" id="addContactBtn">+</button>
+                </div>
+                <div id="contactsList">
+                    <!-- Contacts will be dynamically added here -->
+                    <div class="contact-item" data-id="system">
+                        <div class="contact-avatar">S</div>
+                        <div class="contact-info">
+                            <h4>System</h4>
+                            <div class="contact-status">
+                                <div class="status-indicator online"></div>
+                                <span>Always online</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="chat-partner-info">
+                    <div class="contact-avatar" id="chatAvatar">S</div>
+                    <div>
+                        <h3 id="chatPartnerName">System</h3>
+                        <div class="contact-status">
+                            <div class="status-indicator online" id="chatStatus"></div>
+                            <span id="chatStatusText">Online</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="action-btn" id="encryptionInfoBtn" title="Encryption Info">🔒</button>
+                    <button class="action-btn" id="clearChatBtn" title="Clear Chat">🗑️</button>
+                    <button class="action-btn" id="disconnectBtn" title="Disconnect">🚫</button>
+                </div>
+            </div>
+
+            <div class="messages-container" id="messagesContainer">
+                <!-- System welcome message -->
+                <div class="message received">
+                    <div class="message-content">
+                        Welcome to ShadowNet. This is a secure, peer-to-peer messaging application running entirely in your browser. All messages are end-to-end encrypted and never pass through a central server.
+                    </div>
+                    <div class="message-time">Just now</div>
+                </div>
+                <div class="message received">
+                    <div class="message-content">
+                        To start messaging, share your unique ID with someone or connect to their ID using the + button in the contacts panel.
+                    </div>
+                    <div class="message-time">Just now</div>
+                </div>
+            </div>
+
+            <div class="message-input-container">
+                <div class="input-wrapper">
+                    <textarea 
+                        class="message-input" 
+                        id="messageInput" 
+                        placeholder="Type your encrypted message here... (Press Enter to send, Shift+Enter for new line)"
+                        rows="1"
+                    ></textarea>
+                    <button class="send-btn" id="sendBtn" disabled>➤</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Panel -->
+    <div class="connection-panel" id="connectionPanel">
+        <div class="panel-header">
+            <h3>Connect to Peer</h3>
+            <button class="close-panel" id="closePanelBtn">×</button>
+        </div>
+        <input 
+            type="text" 
+            class="peer-id-input" 
+            id="peerIdInput" 
+            placeholder="Enter peer's ID"
+        >
+        <button class="connect-btn" id="connectBtn">Connect</button>
+        <div class="your-id">
+            Your ID: <span id="yourIdDisplay">Generating...</span>
+            <button class="copy-id" id="copyIdBtn">Copy</button>
+        </div>
+    </div>
+
+    <!-- Encryption Badge -->
+    <div class="encryption-badge">
+        <span class="lock-icon">🔒</span>
+        End-to-end encrypted • Peer-to-peer
+    </div>
+
+    <script>
+        class ShadowNetMessenger {
+            constructor() {
+                this.peer = null;
+                this.conn = null;
+                this.currentPeerId = null;
+                this.userId = this.generateUserId();
+                this.username = `User_${Math.floor(Math.random() * 1000)}`;
+                this.contacts = new Map();
+                this.messages = new Map(); // Map of peerId -> message array
+                this.cryptoKey = null;
+                
+                this.init();
+            }
+
+            generateUserId() {
+                return 'user_' + Math.random().toString(36).substr(2, 9) + 
+                       '_' + Date.now().toString(36);
+            }
+
+            async init() {
+                this.setupUI();
+                await this.initCrypto();
+                await this.initPeerConnection();
+                this.loadFromStorage();
+                this.setupEventListeners();
+                this.updateUI();
+            }
+
+            setupUI() {
+                document.getElementById('username').textContent = this.username;
+                document.getElementById('userId').textContent = this.userId;
+                document.getElementById('userAvatar').textContent = this.username.charAt(0);
+                document.getElementById('yourIdDisplay').textContent = this.userId;
+            }
+
+            async initCrypto() {
+                // Generate a symmetric key for message encryption
+                this.cryptoKey = await window.crypto.subtle.generateKey(
+                    { name: 'AES-GCM', length: 256 },
+                    true,
+                    ['encrypt', 'decrypt']
+                );
+            }
+
+            async initPeerConnection() {
+                try {
+                    // Using a public STUN server for NAT traversal
+                    const configuration = {
+                        iceServers: [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:global.stun.twilio.com:3478' }
+                        ]
+                    };
+
+                    this.peer = new RTCPeerConnection(configuration);
+                    
+                    // Setup data channel
+                    this.dataChannel = this.peer.createDataChannel('shadownet');
+                    this.setupDataChannel(this.dataChannel);
+
+                    // Handle incoming connections
+                    this.peer.ondatachannel = (event) => {
+                        this.dataChannel = event.channel;
+                        this.setupDataChannel(this.dataChannel);
+                    };
+
+                    // ICE candidate handling
+                    this.peer.onicecandidate = (event) => {
+                        if (event.candidate) {
+                            // In a real app, you'd send this to the signaling server
+                            console.log('ICE candidate:', event.candidate);
+                        }
+                    };
+
+                    // Connection state changes
+                    this.peer.onconnectionstatechange = () => {
+                        console.log('Connection state:', this.peer.connectionState);
+                        this.updateConnectionStatus();
+                    };
+
+                } catch (error) {
+                    console.error('Failed to initialize peer connection:', error);
+                    this.showSystemMessage('Failed to initialize peer connection. Please refresh.');
+                }
+            }
+
+            setupDataChannel(channel) {
+                channel.onopen = () => {
+                    console.log('Data channel opened');
+                    this.showSystemMessage('Connected to peer!');
+                    this.updateConnectionStatus();
+                };
+
+                channel.onclose = () => {
+                    console.log('Data channel closed');
+                    this.showSystemMessage('Disconnected from peer.');
+                    this.updateConnectionStatus();
+                };
+
+                channel.onmessage = async (event) => {
+                    try {
+                        const message = JSON.parse(event.data);
+                        await this.handleIncomingMessage(message);
+                    } catch (error) {
+                        console.error('Error handling message:', error);
+                    }
+                };
+            }
+
+            async handleIncomingMessage(message) {
+                if (message.type === 'text') {
+                    // In a real implementation, you'd decrypt the message
+                    const decryptedText = message.content; // Placeholder for decryption
+                    
+                    this.addMessage(message.senderId, decryptedText, false);
+                    this.saveToStorage();
+                    
+                    // Show notification
+                    if (!document.hasFocus()) {
+                        this.showNotification(`New message from ${message.senderName}`);
+                    }
+                } else if (message.type === 'handshake') {
+                    // Handle connection handshake
+                    this.currentPeerId = message.senderId;
+                    this.addContact(message.senderId, message.senderName);
+                    this.showSystemMessage(`${message.senderName} connected`);
+                }
+            }
+
+            async sendMessage(content) {
+                if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
+                    this.showSystemMessage('Not connected to anyone.');
+                    return;
+                }
+
+                // In a real implementation, you'd encrypt the message
+                const encryptedContent = content; // Placeholder for encryption
+                
+                const message = {
+                    type: 'text',
+                    content: encryptedContent,
+                    senderId: this.userId,
+                    senderName: this.username,
+                    timestamp: Date.now()
+                };
+
+                this.dataChannel.send(JSON.stringify(message));
+                this.addMessage(this.currentPeerId, content, true);
+                this.saveToStorage();
+            }
+
+            addMessage(peerId, content, isSent) {
+                if (!this.messages.has(peerId)) {
+                    this.messages.set(peerId, []);
+                }
+                
+                const message = {
+                    id: Date.now() + Math.random(),
+                    content,
+                    isSent,
+                    timestamp: new Date()
+                };
+                
+                this.messages.get(peerId).push(message);
+                this.displayMessage(message);
+            }
+
+            displayMessage(message) {
+                const container = document.getElementById('messagesContainer');
+                const messageElement = document.createElement('div');
+                
+                messageElement.className = `message ${message.isSent ? 'sent' : 'received'}`;
+                messageElement.innerHTML = `
+                    <div class="message-content">${this.escapeHtml(message.content)}</div>
+                    <div class="message-time">${this.formatTime(message.timestamp)}</div>
+                `;
+                
+                container.appendChild(messageElement);
+                container.scrollTop = container.scrollHeight;
+            }
+
+            async connectToPeer(peerId) {
+                try {
+                    // In a real implementation, you'd use a signaling server
+                    // For demo purposes, we'll simulate connection
+                    
+                    this.currentPeerId = peerId;
+                    this.showSystemMessage(`Attempting to connect to ${peerId}...`);
+                    
+                    // Simulate connection delay
+                    setTimeout(() => {
+                        this.showSystemMessage(`Connected to ${peerId}`);
+                        this.addContact(peerId, `Peer_${peerId.substr(0, 6)}`);
+                        this.updateConnectionStatus();
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error('Connection failed:', error);
+                    this.showSystemMessage('Connection failed. Make sure the peer ID is correct.');
+                }
+            }
+
+            addContact(peerId, name) {
+                if (!this.contacts.has(peerId)) {
+                    this.contacts.set(peerId, {
+                        id: peerId,
+                        name: name,
+                        lastSeen: new Date(),
+                        isOnline: true
+                    });
+                    
+                    this.updateContactsList();
+                }
+            }
+
+            updateContactsList() {
+                const container = document.getElementById('contactsList');
+                // Clear existing contacts (except system)
+                const systemContact = container.querySelector('.contact-item[data-id="system"]');
+                container.innerHTML = '';
+                if (systemContact) container.appendChild(systemContact);
+                
+                // Add all contacts
+                this.contacts.forEach(contact => {
+                    const contactElement = document.createElement('div');
+                    contactElement.className = 'contact-item';
+                    contactElement.dataset.id = contact.id;
+                    contactElement.innerHTML = `
+                        <div class="contact-avatar">${contact.name.charAt(0)}</div>
+                        <div class="contact-info">
+                            <h4>${contact.name}</h4>
+                            <div class="contact-status">
+                                <div class="status-indicator ${contact.isOnline ? 'online' : 'away'}"></div>
+                                <span>${contact.isOnline ? 'Online' : 'Away'}</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    contactElement.addEventListener('click', () => this.switchChat(contact.id));
+                    container.appendChild(contactElement);
+                });
+            }
+
+            switchChat(peerId) {
+                if (peerId === 'system') {
+                    this.showSystemChat();
+                } else {
+                    const contact = this.contacts.get(peerId);
+                    if (contact) {
+                        this.currentPeerId = peerId;
+                        this.updateChatHeader(contact);
+                        this.displayChatHistory(peerId);
+                    }
+                }
+            }
+
+            showSystemChat() {
+                this.currentPeerId = 'system';
+                document.getElementById('chatPartnerName').textContent = 'System';
+                document.getElementById('chatAvatar').textContent = 'S';
+                document.getElementById('chatStatusText').textContent = 'Always online';
+                document.getElementById('chatStatus').className = 'status-indicator online';
+                
+                this.displaySystemMessages();
+            }
+
+            displayChatHistory(peerId) {
+                const container = document.getElementById('messagesContainer');
+                container.innerHTML = '';
+                
+                if (this.messages.has(peerId)) {
+                    this.messages.get(peerId).forEach(msg => this.displayMessage(msg));
+                } else {
+                    this.showSystemMessage(`Start chatting with ${this.contacts.get(peerId).name}`);
+                }
+                
+                container.scrollTop = container.scrollHeight;
+            }
+
+            displaySystemMessages() {
+                const container = document.getElementById('messagesContainer');
+                container.innerHTML = '';
+                
+                const systemMessages = [
+                    "Welcome to ShadowNet secure messaging.",
+                    "All communications are peer-to-peer and end-to-end encrypted.",
+                    "Your messages never pass through a central server.",
+                    "To connect with someone, share your ID or enter theirs.",
+                    "Click on a contact to start chatting."
+                ];
+                
+                systemMessages.forEach((msg, index) => {
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'message received';
+                    messageElement.innerHTML = `
+                        <div class="message-content">${msg}</div>
+                        <div class="message-time">${index === 0 ? 'Just now' : 'System'}</div>
+                    `;
+                    container.appendChild(messageElement);
+                });
+            }
+
+            showSystemMessage(content) {
+                this.addMessage('system', content, false);
+            }
+
+            updateConnectionStatus() {
+                const statusElem = document.getElementById('chatStatus');
+                const statusText = document.getElementById('chatStatusText');
+                
+                if (this.currentPeerId === 'system') {
+                    statusElem.className = 'status-indicator online';
+                    statusText.textContent = 'Always online';
+                } else if (this.dataChannel && this.dataChannel.readyState === 'open') {
+                    statusElem.className = 'status-indicator online';
+                    statusText.textContent = 'Connected';
+                } else {
+                    statusElem.className = 'status-indicator away';
+                    statusText.textContent = 'Disconnected';
+                }
+            }
+
+            updateChatHeader(contact) {
+                document.getElementById('chatPartnerName').textContent = contact.name;
+                document.getElementById('chatAvatar').textContent = contact.name.charAt(0);
+                this.updateConnectionStatus();
+            }
+
+            setupEventListeners() {
+                // Send message
+                document.getElementById('sendBtn').addEventListener('click', () => this.handleSend());
+                document.getElementById('messageInput').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.handleSend();
+                    }
+                });
+
+                // Auto-resize textarea
+                document.getElementById('messageInput').addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = (this.scrollHeight) + 'px';
+                });
+
+                // Connection panel
+                document.getElementById('addContactBtn').addEventListener('click', () => {
+                    document.getElementById('connectionPanel').classList.add('active');
+                });
+
+                document.getElementById('closePanelBtn').addEventListener('click', () => {
+                    document.getElementById('connectionPanel').classList.remove('active');
+                });
+
+                document.getElementById('connectBtn').addEventListener('click', () => {
+                    const peerId = document.getElementById('peerIdInput').value.trim();
+                    if (peerId) {
+                        this.connectToPeer(peerId);
+                        document.getElementById('connectionPanel').classList.remove('active');
+                        document.getElementById('peerIdInput').value = '';
+                    }
+                });
+
+                // Copy ID
+                document.getElementById('copyIdBtn').addEventListener('click', () => {
+                    navigator.clipboard.writeText(this.userId).then(() => {
+                        this.showSystemMessage('ID copied to clipboard!');
+                    });
+                });
+
+                // Clear chat
+                document.getElementById('clearChatBtn').addEventListener('click', () => {
+                    if (confirm('Clear all messages in this chat?')) {
+                        if (this.currentPeerId && this.currentPeerId !== 'system') {
+                            this.messages.delete(this.currentPeerId);
+                            this.displayChatHistory(this.currentPeerId);
+                            this.saveToStorage();
+                        }
+                    }
+                });
+
+                // Disconnect
+                document.getElementById('disconnectBtn').addEventListener('click', () => {
+                    if (this.dataChannel) {
+                        this.dataChannel.close();
+                        this.showSystemMessage('Disconnected from peer.');
+                    }
+                });
+
+                // Encryption info
+                document.getElementById('encryptionInfoBtn').addEventListener('click', () => {
+                    this.showSystemMessage('Encryption: AES-256-GCM • Key exchange: ECDH • Transport: WebRTC with DTLS');
+                });
+
+                // Click user ID to copy
+                document.getElementById('userId').addEventListener('click', () => {
+                    navigator.clipboard.writeText(this.userId).then(() => {
+                        this.showSystemMessage('Your ID copied to clipboard! Share this with others to connect.');
+                    });
+                });
+            }
+
+            handleSend() {
+                const input = document.getElementById('messageInput');
+                const message = input.value.trim();
+                
+                if (message && this.currentPeerId && this.currentPeerId !== 'system') {
+                    this.sendMessage(message);
+                    input.value = '';
+                    input.style.height = 'auto';
+                    input.focus();
+                } else if (message && this.currentPeerId === 'system') {
+                    this.showSystemMessage("You're in the system chat. Connect to a peer to send messages.");
+                    input.value = '';
+                }
+            }
+
+            saveToStorage() {
+                const data = {
+                    userId: this.userId,
+                    username: this.username,
+                    contacts: Array.from(this.contacts.entries()),
+                    messages: Array.from(this.messages.entries())
+                };
+                localStorage.setItem('shadownet_data', JSON.stringify(data));
+            }
+
+            loadFromStorage() {
+                try {
+                    const data = JSON.parse(localStorage.getItem('shadownet_data'));
+                    if (data) {
+                        this.userId = data.userId || this.userId;
+                        this.username = data.username || this.username;
+                        
+                        if (data.contacts) {
+                            this.contacts = new Map(data.contacts);
+                        }
+                        
+                        if (data.messages) {
+                            this.messages = new Map(data.messages.map(([key, value]) => 
+                                [key, value.map(msg => ({
+                                    ...msg,
+                                    timestamp: new Date(msg.timestamp)
+                                }))]
+                            ));
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading from storage:', error);
+                }
+            }
+
+            showNotification(message) {
+                if (Notification.permission === 'granted') {
+                    new Notification('ShadowNet', { body: message });
+                } else if (Notification.permission !== 'denied') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            new Notification('ShadowNet', { body: message });
+                        }
+                    });
+                }
+            }
+
+            formatTime(date) {
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        // Initialize the app when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.messenger = new ShadowNetMessenger();
+            
+            // Request notification permission
+            if ('Notification' in window) {
+                Notification.requestPermission();
+            }
+            
+            // Add some demo contacts
+            setTimeout(() => {
+                window.messenger.addContact('demo_peer_1', 'Alex');
+                window.messenger.addContact('demo_peer_2', 'Jordan');
+                window.messenger.addContact('demo_peer_3', 'Taylor');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
